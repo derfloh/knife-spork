@@ -271,7 +271,29 @@ module KnifeSpork
                 puts "Something went wrong with sending to HipChat: (#{msg})"
               end
           end
-            
+
+          if !@conf.campfire.nil? && @conf.campfire.enabled
+              begin
+		localhost = `hostname`
+                message = "Knife Spork: #{ENV['USER']}@#{localhost} uploaded environment #{environment.gsub(".json","")} #{@gist}"
+
+		uri = URI.parse("https://#{@conf.campfire.account}.campfirenow.com/room/#{@conf.campfire.room}/speak.json")
+		http = Net::HTTP.new(uri.host, uri.port)
+		http.use_ssl = true
+		http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+		request = Net::HTTP::Post.new(uri.request_uri)
+		request.basic_auth @conf.campfire.token, 'X'
+		request['Content-Type'] = 'application/json'
+		http.request(request, JSON.generate('message' => {'body' => message}))
+              rescue Exception => msg
+                puts "Something went wrong with sending to Campfire: (#{msg})"
+              end
+          end
+
+
+
+
+
           if !@conf.eventinator.nil? && @conf.eventinator.enabled
             metadata = {}
             metadata[:promoted_cookbooks] = {}
